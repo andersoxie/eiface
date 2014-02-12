@@ -25,7 +25,7 @@ feature {NONE} -- Initialization
 			app_data : FACEBOOK_APP_SPECIFIC_DATA
 		 	empty_token : detachable  OAUTH_TOKEN
 		do
-			create app_data
+			create {TEST_FACEBOOK_APP_SPECIFIC_DATA} app_data
 			create config.make_default (app_data.api_key, app_data.api_secret)
 
 
