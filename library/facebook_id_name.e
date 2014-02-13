@@ -21,7 +21,6 @@ feature {NONE} -- Creation
 			create name.make_empty
 		ensure
 			id_set: id = an_id
-			id_set_to_zero: id.same_string ("0")
 		end
 
 	make_empty
