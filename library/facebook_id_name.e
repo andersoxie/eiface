@@ -19,12 +19,16 @@ feature {NONE} -- Creation
 		do
 			set_id (an_id)
 			create name.make_empty
+		ensure
+			id_set: id = an_id
 		end
 
 	make_empty
 			-- Create an empty project object
 		do
 			make_with_id ("0")
+		ensure
+			id_set_to_zero: id.same_string ("0")
 		end
 
 feature -- Access
@@ -37,16 +41,20 @@ feature -- Access
 
 feature -- Change	
 
-	set_id (value: like id)
-			-- Set `id' to `value'
+	set_id (a_value: like id)
+			-- Set `id' to `a_value'
 		do
-			id := value
+			id := a_value
+		ensure
+			id_set: id = a_value
 		end
 
-	set_name (value: like name)
-			-- Set `name' to `value'
+	set_name (a_value: like name)
+			-- Set `name' to `a_value'
 		do
-			name := value
+			name := a_value
+		ensure
+			name_set: name = a_value
 		end
 
 
