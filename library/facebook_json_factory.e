@@ -12,10 +12,18 @@ class
 feature -- Factory: user
 
 	user_from_string (response: detachable READABLE_STRING_8): detachable FACEBOOK_USER
-			-- <Precursor>
+			--
 		do
 			if attached json_object_data_from_string (response) as json then
 				Result := user_from_json (json)
+			end
+		end
+
+	next_page_from_string (response: detachable READABLE_STRING_8): detachable FACEBOOK_NEXT_PAGING
+				-- When getting data from Facebook it might be a lot. If it goes over a certain limit the JSON includes a "next"-link that can be used to get more data.
+		do
+			if attached json_paging_from_string (response) as json then
+				Result := next_page_from_json (json)
 			end
 		end
 
@@ -32,6 +40,48 @@ feature -- Factory: user
 				end
 			end
 		end
+
+	list_of_friends_from_string (response: detachable READABLE_STRING_8):  ARRAY[FACEBOOK_USER]
+			-- List of friends in this JSON. It might be that one have more friends. Check with "next_page_from_string"
+		local
+			j_array : detachable JSON_ARRAY
+			iterator : ITERATION_CURSOR [JSON_VALUE]
+			value : JSON_VALUE
+			f_user : detachable FACEBOOK_USER
+			i :INTEGER
+		do
+			i := 1
+			j_array := json_array_data_from_string (response)
+			create Result.make_empty
+
+			if attached j_array as j_a then
+				from
+					iterator := j_a.new_cursor
+				until
+					iterator.after
+				loop
+					value := iterator.item
+					if attached {JSON_OBJECT}value as v then
+						f_user := user_from_json (v)
+						if attached f_user as f then
+							-- If it is not possible to read a certain value it is just ignored.
+							Result.force (f, i)
+							i:=i+1
+						end
+					end
+					iterator.forth
+				end
+			end
+		end
+
+	next_page_from_json (json: JSON_OBJECT): detachable FACEBOOK_NEXT_PAGING
+			-- User from `json' object if well formed.
+		do
+			if attached string_from_json ("next", json) as link then
+				create Result.make (link)
+			end
+		end
+
 
 feature {NONE} -- JSON helper -- TODO Might be moved to a common ancestor with eiasan
 
@@ -66,6 +116,28 @@ feature {NONE} -- JSON helper -- TODO Might be moved to a common ancestor with e
 					attached parser.parse_object as json_doc
 				then
 					if attached {JSON_ARRAY} json_doc.item ("data") as json_data then
+						Result := json_data
+					else
+						check has_json_array: False end
+					end
+				else
+					check well_formed_json_data: False end
+				end
+			end
+		end
+
+	json_paging_from_string (s: detachable READABLE_STRING_8): detachable JSON_OBJECT
+			-- JSON_OBJECT object from json string `s'.
+		local
+			parser: JSON_PARSER
+		do
+			if attached s then
+				create parser.make_parser (s)
+				if
+					parser.is_parsed and then
+					attached parser.parse_object as json_doc
+				then
+					if attached {JSON_OBJECT} json_doc.item ("paging") as json_data then
 						Result := json_data
 					else
 						check has_json_array: False end
